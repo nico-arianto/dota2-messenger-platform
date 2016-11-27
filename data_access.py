@@ -42,7 +42,7 @@ class DataAccess:
         elif steam_id:
             return query.filter(Player.steam_id == steam_id).first()
         elif real_name:
-            return query.filter(text('real_name like :real_name')).params(real_name="%" + real_name + "%").first()
+            return query.filter(text('real_name like :real_name')).params(real_name="%" + real_name + "%").all()
         else:
             raise ValueError('Account id or Steam id or real name must be specified!')
 

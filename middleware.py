@@ -2,6 +2,7 @@ import dota2api
 from sqlalchemy.exc import DatabaseError
 
 from data_access import DataAccess
+from facebook2api import send
 import logger
 
 import config
@@ -90,6 +91,78 @@ TOKEN
 def validate_token(mode=None, token=None):
     LOGGER.info('Validating token for mode: %s', mode)
     return mode == 'subscribe' and token == config.dota2messenger['VALIDATION_TOKEN']
+
+"""
+Message
+"""
+def received_message(event):
+    sender_id = event['sender']['id']
+    recipient_id = event['recipient']['id']
+    time_of_message = event['timestamp']
+    message = event['message']
+
+    LOGGER.info('Received message for user %d and page %d at %d with message: %s', sender_id, recipient_id, time_of_message, message)
+
+    is_echo = message['is_echo']
+    message_id = message['mid']
+    app_id = message['app_id']
+    metadata = message['metadata']
+    message_text = message['text']
+    message_attachments = message['attachments']
+    quick_reply = message['quick_reply']
+
+    if is_echo:
+        LOGGER.info('Received echo for message id %s and app id %d with metadata %s', message_id, app_id, metadata)
+        return
+    elif quick_reply:
+        LOGGER.info('Quick reply for message id %s', message_id)
+        _send_text_message(sender_id, 'Quick reply tapped')
+        return
+
+    if message_text:
+        _process_text_message(sender_id, message_text)
+    elif message_attachments:
+        _send_text_message(sender_id, 'Message with attachments received')
+
+def _process_text_message(recipient_id, message_text):
+    if 'find' in message_text:
+        player_id = None # TODO: substring of message_text to get player id
+        player = DATA.get_player(account_id=player_id)
+        if player is None:
+            player = DATA.get_player(steam_id=player_id)
+        _send_player_message(recipient_id, [ player ])
+    elif 'search' in message_text:
+        player_name = None # TODO: substring of message_text to get player name
+        players = DATA.get_player(real_name=player_name)
+        _send_player_message(recipient_id, players)
+    else:
+        _send_text_message(recipient_id, 'To start the look up of Dota2 player, please type "find <player_id>" or "search <player_name>"')
+
+def _send_players_message(recipient_id, players):
+    if players is None or len(players) == 0:
+        _send_text_message(recipient_id, 'No player found')
+    message_data = {
+        'recipient': {
+            'id': recipient_id
+        },
+        'message': {
+            'attachment': {
+                'type': #TODO: complete this attachments based on players variable.
+            }
+        }
+    }
+
+def _send_text_message(recipient_id, message_text):
+    message_data = {
+        'recipient': {
+            'id': recipient_id
+        },
+        'message': {
+            'text': message_text,
+            'metadata': 'DOTA2_DEFINED_METADATA'
+        }
+    };
+    send(message_data)
 
 if __name__ == '__main__':
     # initialise_database()
