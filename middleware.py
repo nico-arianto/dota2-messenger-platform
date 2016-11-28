@@ -2,7 +2,8 @@ import dota2api
 from sqlalchemy.exc import DatabaseError
 
 from data_access import DataAccess
-from facebook2api import send
+from facebook2api import send_text_message
+from facebook2api import send_generic_message
 import logger
 
 import config
@@ -116,54 +117,74 @@ def received_message(event):
         return
     elif quick_reply:
         LOGGER.info('Quick reply for message id %s', message_id)
-        _send_text_message(sender_id, 'Quick reply tapped')
+        send_text_message(sender_id, 'Quick reply tapped')
         return
 
     if message_text:
         _process_text_message(sender_id, message_text)
     elif message_attachments:
-        _send_text_message(sender_id, 'Message with attachments received')
+        send_text_message(sender_id, 'Message with attachments received')
 
 def _process_text_message(recipient_id, message_text):
-    if 'find' in message_text:
-        player_id = None # TODO: substring of message_text to get player id
+
+    # find player by id
+    message_value = _get_message_value(message_text, 'find')
+    if message_value:
+        player_id = int(message_value)
         player = DATA.get_player(account_id=player_id)
         if player is None:
             player = DATA.get_player(steam_id=player_id)
-        _send_player_message(recipient_id, [ player ])
-    elif 'search' in message_text:
-        player_name = None # TODO: substring of message_text to get player name
+        if player:
+            _send_player_message(recipient_id, [ player ])
+        else:
+            send_text_message(recipient_id, 'No player with that id was found')
+        return
+
+    # search players by name
+    message_value = _get_message_value(message_text, 'search')
+    if message_value:
+        player_name = message_value
         players = DATA.get_player(real_name=player_name)
-        _send_player_message(recipient_id, players)
-    else:
-        _send_text_message(recipient_id, 'To start the look up of Dota2 player, please type "find <player_id>" or "search <player_name>"')
+        if players and len(players) > 0:
+            _send_player_message(recipient_id, players)
+        else:
+            send_text_message(recipient_id, 'No player with that name was found')
+        return
+
+    send_text_message(recipient_id, 'To start the look up of Dota2 players, please type "find <player_id>" or "search <player_name>"')
+
+def _get_message_value(message_text, message_command):
+    index = message_text.find(message_command)
+    if index > -1:
+        message_value = message_text[index + len(message_command):].strip()
+        if message_value:
+            return message_value
+    return
 
 def _send_players_message(recipient_id, players):
-    if players is None or len(players) == 0:
-        _send_text_message(recipient_id, 'No player found')
-    message_data = {
-        'recipient': {
-            'id': recipient_id
-        },
-        'message': {
-            'attachment': {
-                'type': #TODO: complete this attachments based on players variable.
-            }
-        }
-    }
-
-def _send_text_message(recipient_id, message_text):
-    message_data = {
-        'recipient': {
-            'id': recipient_id
-        },
-        'message': {
-            'text': message_text,
-            'metadata': 'DOTA2_DEFINED_METADATA'
-        }
-    };
-    send(message_data)
+    elements = []
+    for player in players:
+        player.append({
+            'title': player.persona_name,
+            'subtitle': player.real_name,
+            'item_url': player.profile_url,
+            'image_url': player.avatar,
+            'buttons': [{
+                'type': 'postback',
+                'title': 'Statistics',
+                'payload': 'S ' + player.account_id
+            }, {
+                'type': 'postback',
+                'title': 'Heroes',
+                'payload': 'H ' + player.account_id
+            }, {
+                'type': 'postback',
+                'title': 'Items',
+                'payload': 'I ' + player.account_id
+            }]
+        })
+    send_generic_message(elements)
 
 if __name__ == '__main__':
-    # initialise_database()
+    initialise_database()
     fill_database()
