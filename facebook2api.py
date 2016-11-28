@@ -15,7 +15,7 @@ def _send(message_data):
             LOGGER.error('Failed to sent the message data to Facebook API, status: %d', response.status_code)
             LOGGER.error('Error message: %s', response.json()['error'])
         except ValueError as error:
-            LOGGER.error('Failed to retrieved the error message')
+            LOGGER.error('Failed to retrieved the error message, error: %s', str(error))
         return
     body = response.json()
     recipient_id = body['recipient_id']

@@ -19,22 +19,68 @@ def initialise_database():
     DATA.initialise_database()
 
 """
+Master
+"""
+def fill_database_master():
+
+    # Heroes
+    heroes = API.get_heroes()
+    if heroes is None:
+        return
+    for hero in heroes['heroes']:
+        hero_id = hero['id']
+        hero_name = hero['localized_name']
+        portrait_url = hero['url_full_portrait']
+        data_hero = DATA.get_hero(hero_id=hero_id)
+        if data_hero:
+            data_hero.hero_name = hero_name
+            data_hero.portrait_url = portrait_url
+            DATA.update_hero(hero=data_hero)
+            LOGGER.info('Updated hero id: %d', hero_id)
+        else:
+            DATA.add_hero(hero_id=hero_id,
+                          hero_name=hero_name,
+                          portrait_url=portrait_url)
+            LOGGER.info('Created hero id: %d', hero_id)
+
+    # Items
+    items = API.get_game_items()
+    if items is None:
+        return
+    for item in items['items']:
+        item_id = item['id']
+        item_name = item['localized_name']
+        image_url = item['url_image']
+        data_item = DATA.get_item(item_id=item_id)
+        if data_item:
+            data_item.item_name = item_name
+            data_item.image_url = image_url
+            DATA.update_item(data_item)
+            LOGGER.info('Updated item id: %d', item_id)
+        else:
+            DATA.add_item(item_id=item_id,
+                          item_name=item_name,
+                          image_url=image_url)
+            LOGGER.info('Created item id: %d', item_id)
+
+"""
 ETL
 """
-def fill_database():
-    last_history = DATA.get_last_history()
+def fill_database_detail():
 
+    # Retrieving the last match id
+    last_history = DATA.get_last_history()
     start_at_match_seq_num = None
     if last_history:
         start_at_match_seq_num = last_history.last_match_id
     LOGGER.info('ETL start from math id: %s', str(start_at_match_seq_num))
 
+    # Looping the next 100 matches history
     next_match_history = API.get_match_history_by_seq_num(start_at_match_seq_num=start_at_match_seq_num)
     if next_match_history is None:
         return
     elif next_match_history['status'] != 1:
         raise ValueError(next_match_history['statusDetail'])
-
     last_match = None
     account_ids = []
     for match in next_match_history['matches']:
@@ -47,15 +93,16 @@ def fill_database():
                 __fill_player(account_id=account_id)
                 account_ids.append(account_id)
 
+    # Records the last match id in the history
     DATA.add_history(last_match_id=last_match)
-    LOGGER.info('ETL finish with math id: %s', str(last_match))
+    LOGGER.info('ETL finish with math id: %d', last_match)
 
 def __fill_player(account_id):
-    LOGGER.info('Find account id: %s', str(account_id))
-    # Important: Cannot utilize steamids with account_ids, because the orders of returned players was not in the same sequence.
+    LOGGER.info('Find account id: %d', account_id)
+    # Important: Cannot utilize steamids with account_ids, because the orders of returned players was not in the same sequence and no account id in the response.
     players = API.get_player_summaries(steamids=account_id)
     if players is None:
-        LOGGER.info('Not found account id: %s', str(account_id))
+        LOGGER.info('Not found account id: %d', account_id)
         return
     for player in players['players']:
         steam_id = player['steamid']
@@ -65,25 +112,25 @@ def __fill_player(account_id):
         profile_url = player.get('profileurl', None)
         data_player = DATA.get_player(account_id=account_id)
         try:
-            if data_player is None:
-                DATA.add_player(account_id=account_id,
-                                steam_id=steam_id,
-                                profile_url=profile_url,
-                                real_name=real_name,
-                                persona_name=persona_name,
-                                avatar=avatar)
-                LOGGER.info('Created account id: %s', str(account_id))
-            else:
+            if data_player:
                 data_player.steam_id = steam_id
                 data_player.real_name = real_name
                 data_player.persona_name = persona_name
                 data_player.avatar = avatar
                 data_player.profile_url = profile_url
                 DATA.update_player(player=data_player)
-                LOGGER.info('Updated account id: %s', str(account_id))
+                LOGGER.info('Updated account id: %d', account_id)
+            else:
+                DATA.add_player(account_id=account_id,
+                                steam_id=steam_id,
+                                profile_url=profile_url,
+                                real_name=real_name,
+                                persona_name=persona_name,
+                                avatar=avatar)
+                LOGGER.info('Created account id: %d', account_id)
+
         except DatabaseError as error: # TODO: Temporary ignore the unsupported data, especially the unicode issue.
-            LOGGER.error('Failed to process account id: %s', str(account_id))
-            LOGGER.debug(str(error))
+            LOGGER.error('Failed to process account id: %d, error: %s', account_id, str(error))
             DATA.session.rollback()
 
 """
@@ -128,20 +175,23 @@ def received_message(event):
 def _process_text_message(recipient_id, message_text):
 
     # find player by id
-    message_value = _get_message_value(message_text, 'find')
+    message_value = _get_value(message_text, 'find')
     if message_value:
-        player_id = int(message_value)
-        player = DATA.get_player(account_id=player_id)
-        if player is None:
-            player = DATA.get_player(steam_id=player_id)
-        if player:
-            _send_players_message(recipient_id, [ player ])
-        else:
-            send_text_message(recipient_id, 'No player with that id was found')
+        try:
+            player_id = int(message_value)
+            player = DATA.get_player(account_id=player_id)
+            if player is None:
+                player = DATA.get_player(steam_id=player_id)
+            if player:
+                _send_players_message(recipient_id, [ player ])
+            else:
+                send_text_message(recipient_id, 'No player with that id was found')
+        except ValueError as error:
+            LOGGER.error('Failed to converted %s to an int, error: %s', message_value, str(error))
         return
 
     # search players by name
-    message_value = _get_message_value(message_text, 'search')
+    message_value = _get_value(message_text, 'search')
     if message_value:
         player_name = message_value
         players = DATA.get_player(real_name=player_name)
@@ -153,12 +203,12 @@ def _process_text_message(recipient_id, message_text):
 
     send_text_message(recipient_id, 'To start the look up of Dota2 players, please type "find <player_id>" or "search <player_name>"')
 
-def _get_message_value(message_text, message_command):
-    index = message_text.find(message_command)
+def _get_value(text, command):
+    index = text.find(command)
     if index > -1:
-        message_value = message_text[index + len(message_command):].strip()
-        if message_value:
-            return message_value
+        value = text[index + len(command):].strip()
+        if value:
+            return value
     return
 
 def _send_players_message(recipient_id, players):
@@ -187,4 +237,5 @@ def _send_players_message(recipient_id, players):
 
 if __name__ == '__main__':
     initialise_database()
-    fill_database()
+    fill_database_master()
+    fill_database_detail()

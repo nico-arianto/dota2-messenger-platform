@@ -4,6 +4,8 @@ from sqlalchemy.sql.expression import or_
 from sqlalchemy.sql.expression import text
 from sqlalchemy.sql.expression import desc
 
+from Models import Hero
+from Models import Item
 from Models import Player
 from Models import History
 
@@ -21,6 +23,54 @@ class DataAccess:
 
     def initialise_database(self):
         initialise_database(self.connection)
+
+    """
+    Hero
+    """
+    def add_hero(self, hero_id, hero_name, portrait_url):
+        new_hero = Hero(hero_id=hero_id,
+                        hero_name = hero_name,
+                        portrait_url=portrait_url)
+        self.session.add(new_hero)
+        self.session.commit()
+        return new_hero
+
+    def get_hero(self, hero_id):
+        if hero_id:
+            return self.session.query(Hero).filter(Hero.hero_id == hero_id).first()
+        else:
+            raise ValueError('Hero id must be specified!')
+
+    def update_hero(self, hero):
+        if hero is None:
+            raise ValueError('Hero is required!')
+        self.session.add(hero)
+        self.session.commit()
+        return hero
+
+    """
+    Item
+    """
+    def add_item(self, item_id, item_name, image_url):
+        new_item = Item(item_id=item_id,
+                        item_name = item_name,
+                        image_url=image_url)
+        self.session.add(new_item)
+        self.session.commit()
+        return new_item
+
+    def get_item(self, item_id):
+        if item_id:
+            return self.session.query(Item).filter(Item.item_id == item_id).first()
+        else:
+            raise ValueError('Item id must be specified!')
+
+    def update_item(self, item):
+        if item is None:
+            raise ValueError('Item is required!')
+        self.session.add(item)
+        self.session.commit()
+        return item
 
     """
     Player
@@ -42,7 +92,7 @@ class DataAccess:
             return query.filter(Player.account_id == account_id).first()
         elif steam_id:
             return query.filter(Player.steam_id == steam_id).first()
-        elif real_name: # limit to 10 players
+        elif real_name: # limit to 10 players and recommended to be optimized by full-text search.
             LIMIT_PLAYERS = 10
             return query.filter(or_(text('real_name like :real_name'), text('persona_name like :real_name'))).params(real_name="%" + real_name + "%").limit(LIMIT_PLAYERS).all()
         else:
