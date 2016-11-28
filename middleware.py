@@ -61,7 +61,7 @@ def __fill_player(account_id):
         steam_id = player['steamid']
         real_name = player.get('realname', None)
         persona_name = player.get('personaname', None)
-        avatar = player.get('avatarmedium', None)
+        avatar = player.get('avatarfull', None)
         profile_url = player.get('profileurl', None)
         data_player = DATA.get_player(account_id=account_id)
         try:
