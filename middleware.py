@@ -61,7 +61,7 @@ def __fill_player(account_id):
         steam_id = player['steamid']
         real_name = player.get('realname', None)
         persona_name = player.get('personaname', None)
-        avatar = player.get('avatarfull', None)
+        avatar = player.get('avatarmedium', None)
         profile_url = player.get('profileurl', None)
         data_player = DATA.get_player(account_id=account_id)
         try:
@@ -135,7 +135,7 @@ def _process_text_message(recipient_id, message_text):
         if player is None:
             player = DATA.get_player(steam_id=player_id)
         if player:
-            _send_player_message(recipient_id, [ player ])
+            _send_players_message(recipient_id, [ player ])
         else:
             send_text_message(recipient_id, 'No player with that id was found')
         return
@@ -146,7 +146,7 @@ def _process_text_message(recipient_id, message_text):
         player_name = message_value
         players = DATA.get_player(real_name=player_name)
         if players and len(players) > 0:
-            _send_player_message(recipient_id, players)
+            _send_players_message(recipient_id, players)
         else:
             send_text_message(recipient_id, 'No player with that name was found')
         return
@@ -164,7 +164,7 @@ def _get_message_value(message_text, message_command):
 def _send_players_message(recipient_id, players):
     elements = []
     for player in players:
-        player.append({
+        elements.append({
             'title': player.persona_name,
             'subtitle': player.real_name,
             'item_url': player.profile_url,
@@ -172,18 +172,18 @@ def _send_players_message(recipient_id, players):
             'buttons': [{
                 'type': 'postback',
                 'title': 'Statistics',
-                'payload': 'S ' + player.account_id
+                'payload': 'S ' + str(player.account_id)
             }, {
                 'type': 'postback',
                 'title': 'Heroes',
-                'payload': 'H ' + player.account_id
+                'payload': 'H ' + str(player.account_id)
             }, {
                 'type': 'postback',
                 'title': 'Items',
-                'payload': 'I ' + player.account_id
+                'payload': 'I ' + str(player.account_id)
             }]
         })
-    send_generic_message(elements)
+    send_generic_message(recipient_id, elements)
 
 if __name__ == '__main__':
     initialise_database()

@@ -27,7 +27,7 @@ def verify_request_signature(func):
             elements = signature.split('=')
             method = elements[0]
             signature_hash = elements[1]
-            expected_hash = hmac.new(APP_SECRET, msg = request.stream, digestmod = method).hexdigest()
+            expected_hash = hmac.new(APP_SECRET, msg = request.get_data(), digestmod = method).hexdigest()
             if signature_hash != expected_hash:
                 LOGGER.error('Signature was invalid')
                 return make_response('', 403)

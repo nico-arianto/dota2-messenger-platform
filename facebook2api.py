@@ -39,8 +39,6 @@ def send_text_message(recipient_id, message_text):
     _send(message_data)
 
 def send_generic_message(recipient_id, elements):
-    if players is None or len(players) == 0:
-        send_text_message(recipient_id, 'No player found')
     message_data = {
         'recipient': {
             'id': recipient_id

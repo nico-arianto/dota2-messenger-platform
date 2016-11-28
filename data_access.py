@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql.expression import or_
 from sqlalchemy.sql.expression import text
 from sqlalchemy.sql.expression import desc
 
@@ -43,7 +44,7 @@ class DataAccess:
             return query.filter(Player.steam_id == steam_id).first()
         elif real_name: # limit to 10 players
             LIMIT_PLAYERS = 10
-            return query.filter(text('real_name like :real_name')).params(real_name="%" + real_name + "%").limit(LIMIT_PLAYERS).all()
+            return query.filter(or_(text('real_name like :real_name'), text('persona_name like :real_name'))).params(real_name="%" + real_name + "%").limit(LIMIT_PLAYERS).all()
         else:
             raise ValueError('Account id or Steam id or real name must be specified!')
 
