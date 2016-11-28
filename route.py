@@ -1,3 +1,5 @@
+from functools import wraps
+import hmac
 from flask import request
 from flask import make_response
 
@@ -5,7 +7,10 @@ from middleware import validate_token
 from middleware import received_message
 import logger
 
+import config
+
 LOGGER = logger.getLogger(__name__)
+APP_SECRET = bytes(config.facebook['APP_SECRET'], 'utf-8')
 
 def initalize_routes(app):
     if app is None:
@@ -13,6 +18,23 @@ def initalize_routes(app):
     context_root = '/v1.0/'
     app.add_url_rule(context_root + 'webhook', 'webhook_validation', webhook_validation, methods=['GET'])
     app.add_url_rule(context_root + 'webhook', 'webhook_callback', webhook_callback, methods=['POST'])
+
+def verify_request_signature(func):
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        signature = request.headers.get('x-hub-signature', None)
+        if signature:
+            elements = signature.split('=')
+            method = elements[0]
+            signature_hash = elements[1]
+            expected_hash = hmac.new(APP_SECRET, msg = request.stream, digestmod = method).hexdigest()
+            if signature_hash != expected_hash:
+                LOGGER.error('Signature was invalid')
+                return make_response('', 403)
+        else:
+            LOGGER.error('Could not validate the signature')
+        return func(*args, **kwargs)
+    return decorated
 
 def webhook_validation():
     mode = request.args.get('hub.mode')
@@ -25,6 +47,7 @@ def webhook_validation():
         LOGGER.warning('Token was invalid!')
         return make_response('', 403)
 
+@verify_request_signature
 def webhook_callback():
     data = request.json
     if data['object'] == 'page':

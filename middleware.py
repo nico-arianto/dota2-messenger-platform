@@ -102,15 +102,15 @@ def received_message(event):
     time_of_message = event['timestamp']
     message = event['message']
 
-    LOGGER.info('Received message for user %d and page %d at %d with message: %s', sender_id, recipient_id, time_of_message, message)
+    LOGGER.info('Received message for user %s and page %s at %d with message: %s', sender_id, recipient_id, time_of_message, message)
 
-    is_echo = message['is_echo']
-    message_id = message['mid']
-    app_id = message['app_id']
-    metadata = message['metadata']
-    message_text = message['text']
-    message_attachments = message['attachments']
-    quick_reply = message['quick_reply']
+    is_echo = message.get('is_echo', None)
+    message_id = message.get('mid', None)
+    app_id = message.get('app_id', None)
+    metadata = message.get('metadata', None)
+    message_text = message.get('text', None)
+    message_attachments = message.get('attachments', None)
+    quick_reply = message.get('quick_reply', None)
 
     if is_echo:
         LOGGER.info('Received echo for message id %s and app id %d with metadata %s', message_id, app_id, metadata)
