@@ -70,8 +70,11 @@ def _process_text_message(data, recipient_id, message_text):
     send_text_message(recipient_id=recipient_id, message_text='To start the look up of Dota2 players, please type:\n\n "{} <player_id>"\n   or\n "{} <player_name>"\n   or\n "{}"'.format(FIND_COMMAND, SEARCH_COMMAND, PLAYERS_COMMAND))
 
 def _process_players():
-    players = data.get_top_player()
-    if players and len(players) > 0:
+    match_summaries = data.get_top_player()
+    if match_summaries and len(match_summaries) > 0:
+        players = []
+        for match_summary in match_summaries:
+            players.append(match_summary.player)
         _send_players_message(recipient_id=recipient_id, players=players)
     else:
         send_text_message(recipient_id=recipient_id, message_text='No player was found')
