@@ -169,8 +169,8 @@ class DataAccess:
     Match Summary
     """
     def get_top_player(self):
-        return self.session.query(MathSummary).join(MathSummary.player).\
-                            order_by(desc(MathSummary.player_win)).\
+        return self.session.query(MatchSummary).join(MatchSummary.player).\
+                            order_by(desc(MatchSummary.player_win)).\
                             limit(LIMIT_DATA).all()
 
     def save_match_summary(self, account_id, player_win, matches):
