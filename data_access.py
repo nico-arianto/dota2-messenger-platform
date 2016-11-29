@@ -18,6 +18,8 @@ from Models import History
 
 from Models import initialise_database
 
+LIMIT_DATA = 10 # limit all() query to 10 records
+
 def _calculate_win_rate(player_win, matches):
     return math.ceil(player_win / matches * 10000) / 100
 
@@ -102,9 +104,8 @@ class DataAccess:
             return query.filter(Player.account_id == account_id).first()
         elif steam_id:
             return query.filter(Player.steam_id == steam_id).first()
-        elif real_name: # limit to 10 players and recommended to be optimized by full-text search.
-            LIMIT_PLAYERS = 10
-            return query.filter(or_(text('real_name like :real_name'), text('persona_name like :real_name'))).params(real_name="%" + real_name + "%").limit(LIMIT_PLAYERS).all()
+        elif real_name: # recommended to be optimized by full-text search.
+            return query.filter(or_(text('real_name like :real_name'), text('persona_name like :real_name'))).params(real_name="%" + real_name + "%").limit(LIMIT_DATA).all()
         else:
             raise ValueError('Account id or Steam id or real name must be specified!')
 
@@ -158,7 +159,7 @@ class DataAccess:
         return self.session.query(MatchItem.account_id,
                                   MatchItem.item_id,
                                   func.sum(text('match_items.player_win')).label('player_win'),
-                                  func.count(MatchHero.player_win).label('matches')).\
+                                  func.count(MatchItem.player_win).label('matches')).\
                             filter(MatchItem.match_id >= match_id).\
                             group_by(MatchItem.account_id).\
                             group_by(MatchItem.item_id).\
@@ -167,6 +168,11 @@ class DataAccess:
     """
     Match Summary
     """
+    def get_top_player(self):
+        return self.session.query(MathSummary).join(MathSummary.player).\
+                            order_by(desc(MathSummary.player_win)).\
+                            limit(LIMIT_DATA).all()
+
     def save_match_summary(self, account_id, player_win, matches):
         match_summary = self.get_match_summary(account_id=account_id)
         if match_summary:
@@ -206,7 +212,7 @@ class DataAccess:
         return self.session.query(MatchHeroSummary).join(MatchHeroSummary.hero).\
                             filter(MatchHeroSummary.account_id == account_id).\
                             order_by(desc(MatchHeroSummary.player_win)).\
-                            limit(10).all()
+                            limit(LIMIT_DATA).all()
 
     def save_match_item_summary(self, account_id, item_id, player_win, matches):
         match_item_summary = self.session.query(MatchItemSummary).\
@@ -230,7 +236,7 @@ class DataAccess:
         return self.session.query(MatchItemSummary).join(MatchItemSummary.item).\
                             filter(MatchItemSummary.account_id == account_id).\
                             order_by(desc(MatchItemSummary.player_win)).\
-                            limit(10).all()
+                            limit(LIMIT_DATA).all()
 
     """
     History

@@ -37,11 +37,11 @@ def received_postback(data, event):
     account_id = _get_account_id(payload=payload)
     if command and account_id:
         if command == STATISTIC_CODE:
-            _send_statistic_message(recipient_id=sender_id, account_id=account_id)
+            _send_statistic_message(data=data, recipient_id=sender_id, account_id=account_id)
         elif command == HEROES_CODE:
-            _send_heroes_message(recipient_id=sender_id, account_id=account_id)
+            _send_heroes_message(data=data, recipient_id=sender_id, account_id=account_id)
         elif command == ITEM_CODE:
-            _send_items_message(recipient_id=sender_id, account_id=account_id)
+            _send_items_message(data=data, recipient_id=sender_id, account_id=account_id)
         else:
             LOGGER.error('Unknown payload command %s', command)
         return
@@ -50,7 +50,7 @@ def received_postback(data, event):
 def _generate_statistic_message(matches, win_rate):
     return 'Matches: {:d} Win Rate: {:.2f} %'.format(matches, win_rate)
 
-def _send_statistic_message(recipient_id, account_id):
+def _send_statistic_message(data, recipient_id, account_id):
     matches = 0
     win_rate = 0
     match_summary = data.get_match_summary(account_id=account_id)
@@ -59,9 +59,9 @@ def _send_statistic_message(recipient_id, account_id):
         win_rate = match_summary.win_rate
     send_text_message(recipient_id=recipient_id, message_text=_generate_statistic_message(matches=matches, win_rate=win_rate))
 
-def _send_heroes_message(recipient_id, account_id):
+def _send_heroes_message(data, recipient_id, account_id):
     elements = []
-    match_hero_summaries = data.get_math_hero_summary(account_id=account_id)
+    match_hero_summaries = data.get_match_hero_summary(account_id=account_id)
     for match_hero_summary in match_hero_summaries:
         hero = match_hero_summary.hero
         elements.append({
@@ -71,7 +71,7 @@ def _send_heroes_message(recipient_id, account_id):
         })
     send_generic_message(recipient_id=recipient_id, elements=elements)
 
-def _send_items_message(recipient_id, account_id):
+def _send_items_message(data, recipient_id, account_id):
     elements = []
     match_item_summaries = data.get_match_item_summary(account_id=account_id)
     for match_item_summary in match_item_summaries:

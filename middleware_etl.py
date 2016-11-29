@@ -16,6 +16,7 @@ def fill_database_detail(data, api):
     elif next_match_history['status'] != 1:
         raise ValueError(next_match_history['statusDetail'])
     account_ids = []
+    invalid_account_ids = []
     last_match_id = start_match_id
     for match in next_match_history['matches']:
         match_id = match['match_id']
@@ -25,8 +26,12 @@ def fill_database_detail(data, api):
             if 'account_id' not in player:
                 continue
             account_id = player['account_id']
+            if account_id in invalid_account_ids:
+                continue
             if account_id not in account_ids:
-                __fill_player(data=data, api=api, account_id=account_id)
+                if not __fill_player(data=data, api=api, account_id=account_id):
+                    invalid_account_ids.append(account_id)
+                    continue
                 account_ids.append(account_id)
 
             # Records the match
@@ -38,14 +43,16 @@ def fill_database_detail(data, api):
                                 player_win=player_win,
                                 hero_id=hero_id)
             LOGGER.info('Created match id: %d with hero id: %d', match_id, hero_id)
+            item_ids = []
             for index in range(0,6):
                 item_id = player['item_' + str(index)]
-                if item_id > 0:
+                if item_id > 0 and item_id not in item_ids:
                     data.add_match_item(match_id=match_id,
                                         account_id=account_id,
                                         player_win=player_win,
                                         item_id=item_id)
                     LOGGER.info('Created match id: %d with item id: %d', match_id, item_id)
+                    item_ids.append(item_id)
 
     if start_match_id != last_match_id:
         _summarize_match(data=data, start_match_id=start_match_id)
@@ -60,7 +67,7 @@ def __fill_player(data, api, account_id):
     players = api.get_player_summaries(steamids=account_id)
     if players is None:
         LOGGER.info('Not found account id: %d', account_id)
-        return
+        return False
     for player in players['players']:
         steam_id = player['steamid']
         real_name = player.get('realname', None)
@@ -85,9 +92,11 @@ def __fill_player(data, api, account_id):
                                 persona_name=persona_name,
                                 avatar=avatar)
                 LOGGER.info('Created account id: %d', account_id)
+            return True
         except DatabaseError as error: # Temporary ignore the unsupported data, especially the unicode issue.
             LOGGER.error('Failed to process account id: %d, error: %s', account_id, str(error))
             data.session.rollback()
+    return False
 
 def _summarize_match(data, start_match_id):
     match_summaries = data.get_match_summary_aggregate(match_id=start_match_id)

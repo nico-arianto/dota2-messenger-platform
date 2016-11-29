@@ -8,6 +8,10 @@ import logger
 
 LOGGER = logger.getLogger(__name__)
 
+FIND_COMMAND = 'find'
+SEARCH_COMMAND = 'search'
+PLAYERS_COMMAND = 'players'
+
 """
 Message
 """
@@ -42,34 +46,51 @@ def received_message(data, event):
 
 def _process_text_message(data, recipient_id, message_text):
 
+    if message_text == PLAYERS_COMMAND:
+        _process_players()
+        return
+
     # find player by id
-    message_value = _get_value(text=message_text, command='find')
+    message_value = _get_value(text=message_text, command=FIND_COMMAND)
     if message_value:
         try:
             player_id = int(message_value)
-            player = data.get_player(account_id=player_id)
-            if player is None:
-                player = data.get_player(steam_id=player_id)
-            if player:
-                _send_players_message(recipient_id=recipient_id, players=[ player ])
-            else:
-                send_text_message(recipient_id=recipient_id, message_text='No player with that id was found')
+            _process_player_by_id(player_id=player_id)
         except ValueError as error:
             LOGGER.error('Failed to converted %s to an int, error: %s', message_value, str(error))
         return
 
     # search players by name
-    message_value = _get_value(text=message_text, command='search')
+    message_value = _get_value(text=message_text, command=SEARCH_COMMAND)
     if message_value:
         player_name = message_value
-        players = data.get_player(real_name=player_name)
-        if players and len(players) > 0:
-            _send_players_message(recipient_id=recipient_id, players=players)
-        else:
-            send_text_message(recipient_id=recipient_id, message_text='No player with that name was found')
+        _process_players_by_name(player_name=player_name)
         return
 
-    send_text_message(recipient_id=recipient_id, message_text='To start the look up of Dota2 players, please type:\n\n "find <player_id>"\n   or\n "search <player_name>"')
+    send_text_message(recipient_id=recipient_id, message_text='To start the look up of Dota2 players, please type:\n\n "{} <player_id>"\n   or\n "{} <player_name>"\n   or\n "{}"'.format(FIND_COMMAND, SEARCH_COMMAND, PLAYERS_COMMAND))
+
+def _process_players():
+    players = data.get_top_player()
+    if players and len(players) > 0:
+        _send_players_message(recipient_id=recipient_id, players=players)
+    else:
+        send_text_message(recipient_id=recipient_id, message_text='No player was found')
+
+def _process_player_by_id(player_id):
+    player = data.get_player(account_id=player_id)
+    if player is None:
+        player = data.get_player(steam_id=player_id)
+    if player:
+        _send_players_message(recipient_id=recipient_id, players=[ player ])
+    else:
+        send_text_message(recipient_id=recipient_id, message_text='No player with that id was found')
+
+def _process_players_by_name(player_name):
+    players = data.get_player(real_name=player_name)
+    if players and len(players) > 0:
+        _send_players_message(recipient_id=recipient_id, players=players)
+    else:
+        send_text_message(recipient_id=recipient_id, message_text='No player with that name was found')
 
 def _get_value(text, command):
     index = text.find(command)
