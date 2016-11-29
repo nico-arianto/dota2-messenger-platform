@@ -5,6 +5,7 @@ from flask import make_response
 
 from middleware import validate_token
 from middleware import received_message
+from middleware import received_postback
 import logger
 
 import config
@@ -62,7 +63,7 @@ def webhook_callback():
                 elif 'delivery' in message_event:
                     LOGGER.info('Webhook received message event: delivery')
                 elif 'postback' in message_event:
-                    LOGGER.info('Webhook received message event: postback')
+                    received_postback(message_event)
                 elif 'read' in message_event:
                     LOGGER.info('Webhook received message event: read')
                 elif 'account_linking' in message_event:
