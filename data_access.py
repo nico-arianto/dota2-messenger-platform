@@ -170,6 +170,7 @@ class DataAccess:
     """
     def get_top_player(self):
         return self.session.query(MatchSummary).join(MatchSummary.player).\
+                            order_by(desc(MatchSummary.matches)).\
                             order_by(desc(MatchSummary.player_win)).\
                             limit(LIMIT_DATA).all()
 
@@ -211,6 +212,7 @@ class DataAccess:
     def get_match_hero_summary(self, account_id):
         return self.session.query(MatchHeroSummary).join(MatchHeroSummary.hero).\
                             filter(MatchHeroSummary.account_id == account_id).\
+                            order_by(desc(MatchHeroSummary.matches)).\
                             order_by(desc(MatchHeroSummary.player_win)).\
                             limit(LIMIT_DATA).all()
 
@@ -235,6 +237,7 @@ class DataAccess:
     def get_match_item_summary(self, account_id):
         return self.session.query(MatchItemSummary).join(MatchItemSummary.item).\
                             filter(MatchItemSummary.account_id == account_id).\
+                            order_by(desc(MatchItemSummary.matches)).\
                             order_by(desc(MatchItemSummary.player_win)).\
                             limit(LIMIT_DATA).all()
 
