@@ -95,3 +95,7 @@ Note: Dota2 data will be queried from [dota2api](https://dota2api.readthedocs.io
 * **Search** function will requires for the players table to be optimized by full-text search.
 * Schedulers need to be setup out of this code to re-trigger the **fill_database_master()** and **fill_database_detail()** methods.
 * Analytics process need to be improves or re-engineering to use a better solutions to avoid any dirty data because of unexpected errors been raised by the system.
+
+## Private Policy
+
+There will be no data from Facebook Messenger that gonna be recorded inside these application.
