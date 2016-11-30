@@ -1,5 +1,7 @@
 from sqlalchemy import Column, Integer, String
+
 from Models.Model import Model
+
 
 class Hero(Model):
     __tablename__ = 'heroes'

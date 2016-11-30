@@ -1,10 +1,10 @@
-from facebook2api import send_text_message
+import logger
 from facebook2api import send_generic_message
-from middleware_postback import STATISTIC_CODE
+from facebook2api import send_text_message
 from middleware_postback import HEROES_CODE
 from middleware_postback import ITEM_CODE
+from middleware_postback import STATISTIC_CODE
 from middleware_postback import create_payload
-import logger
 
 LOGGER = logger.getLogger(__name__)
 
@@ -15,13 +15,16 @@ PLAYERS_COMMAND = 'players'
 """
 Message
 """
+
+
 def received_message(data, event):
     sender_id = event['sender']['id']
     recipient_id = event['recipient']['id']
     time_of_message = event['timestamp']
     message = event['message']
 
-    LOGGER.info('Received message for user %s and page %s at %d with message: %s', sender_id, recipient_id, time_of_message, message)
+    LOGGER.info('Received message for user %s and page %s at %d with message: %s', sender_id, recipient_id,
+                time_of_message, message)
 
     is_echo = message.get('is_echo', None)
     message_id = message.get('mid', None)
@@ -44,8 +47,8 @@ def received_message(data, event):
     elif message_attachments:
         send_text_message(recipient_id=sender_id, message_text='Message with attachments received')
 
-def _process_text_message(data, recipient_id, message_text):
 
+def _process_text_message(data, recipient_id, message_text):
     # find top players
     if message_text == PLAYERS_COMMAND:
         _process_players(data=data, recipient_id=recipient_id)
@@ -68,7 +71,10 @@ def _process_text_message(data, recipient_id, message_text):
         _process_players_by_name(data=data, recipient_id=recipient_id, player_name=player_name)
         return
 
-    send_text_message(recipient_id=recipient_id, message_text='To start the look up of Dota2 players, please type:\n\n "{} <player_id>"\n   or\n "{} <player_name>"\n   or\n "{}"'.format(FIND_COMMAND, SEARCH_COMMAND, PLAYERS_COMMAND))
+    send_text_message(recipient_id=recipient_id,
+                      message_text='To start the look up of Dota2 players, please type:\n\n "{} <player_id>"\n   or\n "{} <player_name>"\n   or\n "{}"'.format(
+                          FIND_COMMAND, SEARCH_COMMAND, PLAYERS_COMMAND))
+
 
 def _process_players(data, recipient_id):
     match_summaries = data.get_top_player()
@@ -80,14 +86,16 @@ def _process_players(data, recipient_id):
     else:
         send_text_message(recipient_id=recipient_id, message_text='No player was found')
 
+
 def _process_player_by_id(data, recipient_id, player_id):
     player = data.get_player(account_id=player_id)
     if player is None:
         player = data.get_player(steam_id=player_id)
     if player:
-        _send_players_message(recipient_id=recipient_id, players=[ player ])
+        _send_players_message(recipient_id=recipient_id, players=[player])
     else:
         send_text_message(recipient_id=recipient_id, message_text='No player with that id was found')
+
 
 def _process_players_by_name(data, recipient_id, player_name):
     players = data.get_player(real_name=player_name)
@@ -96,6 +104,7 @@ def _process_players_by_name(data, recipient_id, player_name):
     else:
         send_text_message(recipient_id=recipient_id, message_text='No player with that name was found')
 
+
 def _get_value(text, command):
     index = text.find(command)
     if index > -1:
@@ -103,6 +112,7 @@ def _get_value(text, command):
         if value:
             return value
     return
+
 
 def _send_players_message(recipient_id, players):
     elements = []

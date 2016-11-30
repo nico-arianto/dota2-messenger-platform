@@ -1,7 +1,9 @@
 from sqlalchemy import Column, BigInteger, Integer, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
-from Models.Model import Model
+
 from Models.Hero import Hero
+from Models.Model import Model
+
 
 class MatchHeroSummary(Model):
     __tablename__ = 'match_hero_summaries'

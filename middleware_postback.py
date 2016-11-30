@@ -1,6 +1,6 @@
-from facebook2api import send_text_message
-from facebook2api import send_generic_message
 import logger
+from facebook2api import send_generic_message
+from facebook2api import send_text_message
 
 LOGGER = logger.getLogger(__name__)
 
@@ -11,11 +11,15 @@ ITEM_CODE = 'I'
 """
 User defined payload
 """
+
+
 def create_payload(command, account_id):
     return command + ' ' + str(account_id)
 
+
 def _get_command(payload):
     return payload[0:1]
+
 
 def _get_account_id(payload):
     account_id_text = payload[2:]
@@ -25,14 +29,21 @@ def _get_account_id(payload):
         LOGGER.error('Failed to converted %s to an int, error: %s', account_id_text, str(error))
     return
 
+
 """
 Postback
 """
+
+
 def received_postback(data, event):
     sender_id = event['sender']['id']
     recipient_id = event['recipient']['id']
     time_of_postback = event['timestamp']
     payload = event['postback']['payload']
+
+    LOGGER.info('Received postback for user %s and page %s at %d with payload: %s', sender_id, recipient_id,
+                time_of_postback, payload)
+
     command = _get_command(payload=payload)
     account_id = _get_account_id(payload=payload)
     if command and account_id:
@@ -47,8 +58,10 @@ def received_postback(data, event):
         return
     LOGGER.error('Corrupted payload %s', payload)
 
+
 def _generate_statistic_message(matches, win_rate):
     return 'Matches: {:d} Win Rate: {:.2f} %'.format(matches, win_rate)
+
 
 def _send_statistic_message(data, recipient_id, account_id):
     matches = 0
@@ -57,7 +70,9 @@ def _send_statistic_message(data, recipient_id, account_id):
     if match_summary:
         matches = match_summary.matches
         win_rate = match_summary.win_rate
-    send_text_message(recipient_id=recipient_id, message_text=_generate_statistic_message(matches=matches, win_rate=win_rate))
+    send_text_message(recipient_id=recipient_id,
+                      message_text=_generate_statistic_message(matches=matches, win_rate=win_rate))
+
 
 def _send_heroes_message(data, recipient_id, account_id):
     elements = []
@@ -66,10 +81,12 @@ def _send_heroes_message(data, recipient_id, account_id):
         hero = match_hero_summary.hero
         elements.append({
             'title': hero.hero_name,
-            'subtitle': _generate_statistic_message(matches=match_hero_summary.matches, win_rate=match_hero_summary.win_rate),
+            'subtitle': _generate_statistic_message(matches=match_hero_summary.matches,
+                                                    win_rate=match_hero_summary.win_rate),
             'image_url': hero.portrait_url
         })
     send_generic_message(recipient_id=recipient_id, elements=elements)
+
 
 def _send_items_message(data, recipient_id, account_id):
     elements = []
@@ -78,7 +95,8 @@ def _send_items_message(data, recipient_id, account_id):
         item = match_item_summary.item
         elements.append({
             'title': item.item_name,
-            'subtitle': _generate_statistic_message(matches=match_item_summary.matches, win_rate=match_item_summary.win_rate),
+            'subtitle': _generate_statistic_message(matches=match_item_summary.matches,
+                                                    win_rate=match_item_summary.win_rate),
             'image_url': item.image_url
         })
     send_generic_message(recipient_id=recipient_id, elements=elements)

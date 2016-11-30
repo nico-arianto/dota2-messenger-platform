@@ -1,5 +1,7 @@
 from sqlalchemy import Column, Integer
+
 from Models.Model import Model
+
 
 class History(Model):
     __tablename__ = 'histories'

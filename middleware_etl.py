@@ -1,9 +1,11 @@
+from sqlalchemy.exc import DatabaseError
+
 import logger
 
 LOGGER = logger.getLogger(__name__)
 
-def fill_database_detail(data, api):
 
+def fill_database_detail(data, api):
     # Retrieving the last match id
     last_history = data.get_last_history()
     start_match_id = last_history.last_match_id + 1 if last_history else 0
@@ -44,7 +46,7 @@ def fill_database_detail(data, api):
                                 hero_id=hero_id)
             LOGGER.info('Created match id: %d with hero id: %d', match_id, hero_id)
             item_ids = []
-            for index in range(0,6):
+            for index in range(0, 6):
                 item_id = player['item_' + str(index)]
                 if item_id > 0 and item_id not in item_ids:
                     data.add_match_item(match_id=match_id,
@@ -58,8 +60,9 @@ def fill_database_detail(data, api):
         _summarize_match(data=data, start_match_id=start_match_id)
 
         # Records the last match id in the history
-        data.add_history(last_match_id=match_id)
+        data.add_history(last_match_id=last_match_id)
     LOGGER.info('ETL finish with math id: %d', last_match_id)
+
 
 def __fill_player(data, api, account_id):
     LOGGER.info('Find account id: %d', account_id)
@@ -93,10 +96,11 @@ def __fill_player(data, api, account_id):
                                 avatar=avatar)
                 LOGGER.info('Created account id: %d', account_id)
             return True
-        except DatabaseError as error: # Temporary ignore the unsupported data, especially the unicode issue.
+        except DatabaseError as error:  # Temporary ignore the unsupported data, especially the unicode issue.
             LOGGER.error('Failed to process account id: %d, error: %s', account_id, str(error))
             data.session.rollback()
     return False
+
 
 def _summarize_match(data, start_match_id):
     match_summaries = data.get_match_summary_aggregate(match_id=start_match_id)
@@ -111,11 +115,13 @@ def _summarize_match(data, start_match_id):
                                      hero_id=match_hero_summary.hero_id,
                                      player_win=match_hero_summary.player_win,
                                      matches=match_hero_summary.matches)
-        LOGGER.info('Summarize account id: %d and hero id: %d', match_hero_summary.account_id, match_hero_summary.hero_id)
+        LOGGER.info('Summarize account id: %d and hero id: %d', match_hero_summary.account_id,
+                    match_hero_summary.hero_id)
     match_item_summaries = data.get_match_item_summary_aggregate(match_id=start_match_id)
     for match_item_summary in match_item_summaries:
         data.save_match_item_summary(account_id=match_item_summary.account_id,
                                      item_id=match_item_summary.item_id,
                                      player_win=match_item_summary.player_win,
                                      matches=match_item_summary.matches)
-        LOGGER.info('Summarize account id: %d and item id: %d', match_item_summary.account_id, match_item_summary.item_id)
+        LOGGER.info('Summarize account id: %d and item id: %d', match_item_summary.account_id,
+                    match_item_summary.item_id)

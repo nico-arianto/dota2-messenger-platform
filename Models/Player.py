@@ -1,5 +1,7 @@
-from sqlalchemy import Column, Integer, BigInteger, String
+from sqlalchemy import Column, BigInteger, String
+
 from Models.Model import Model
+
 
 class Player(Model):
     __tablename__ = 'players'

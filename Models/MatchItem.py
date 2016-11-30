@@ -1,5 +1,7 @@
 from sqlalchemy import Column, Integer, BigInteger, Boolean
+
 from Models.Model import Model
+
 
 class MatchItem(Model):
     __tablename__ = 'match_items'

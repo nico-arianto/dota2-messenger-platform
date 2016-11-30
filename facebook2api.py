@@ -1,15 +1,15 @@
 import requests
-from requests.exceptions import HTTPError
 from requests import codes
 
-import logger
-
 import config
+import logger
 
 LOGGER = logger.getLogger(__name__)
 
+
 def _send(message_data):
-    response = requests.post(config.facebook['URL'], json=message_data, params={ 'access_token': config.facebook['PAGE_ACCESS_TOKEN'] })
+    response = requests.post(config.facebook['URL'], json=message_data,
+                             params={'access_token': config.facebook['PAGE_ACCESS_TOKEN']})
     if response.status_code != codes.ok:
         try:
             LOGGER.error('Failed to sent the message data to Facebook API, status: %d', response.status_code)
@@ -26,6 +26,7 @@ def _send(message_data):
     else:
         LOGGER.info('Successfully called Facebook API to recipient %s', recipient_id)
 
+
 def send_text_message(recipient_id, message_text):
     message_data = {
         'recipient': {
@@ -35,8 +36,9 @@ def send_text_message(recipient_id, message_text):
             'text': message_text,
             'metadata': 'DOTA2_TEXT_MESSAGE'
         }
-    };
+    }
     _send(message_data)
+
 
 def send_generic_message(recipient_id, elements):
     message_data = {

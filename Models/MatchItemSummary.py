@@ -1,7 +1,9 @@
 from sqlalchemy import Column, BigInteger, Integer, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
-from Models.Model import Model
+
 from Models.Item import Item
+from Models.Model import Model
+
 
 class MatchItemSummary(Model):
     __tablename__ = 'match_item_summaries'

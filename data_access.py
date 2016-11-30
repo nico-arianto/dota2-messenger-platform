@@ -1,30 +1,31 @@
 import math
+
 from sqlalchemy import create_engine
 from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql.expression import desc
 from sqlalchemy.sql.expression import or_
 from sqlalchemy.sql.expression import text
-from sqlalchemy.sql.expression import desc
 
 from Models import Hero
-from Models import Item
-from Models import Player
-from Models import MatchHero
-from Models import MatchItem
-from Models import MatchSummary
-from Models import MatchHeroSummary
-from Models import MatchItemSummary
 from Models import History
-
+from Models import Item
+from Models import MatchHero
+from Models import MatchHeroSummary
+from Models import MatchItem
+from Models import MatchItemSummary
+from Models import MatchSummary
+from Models import Player
 from Models import initialise_database
 
-LIMIT_DATA = 10 # limit all() query to 10 records
+LIMIT_DATA = 10  # limit all() query to 10 records
+
 
 def _calculate_win_rate(player_win, matches):
     return math.ceil(player_win / matches * 10000) / 100
 
-class DataAccess:
 
+class DataAccess:
     def __init__(self, connection):
         if not connection:
             raise ValueError('Connection string is required!')
@@ -39,9 +40,10 @@ class DataAccess:
     """
     Hero
     """
+
     def add_hero(self, hero_id, hero_name, portrait_url):
         new_hero = Hero(hero_id=hero_id,
-                        hero_name = hero_name,
+                        hero_name=hero_name,
                         portrait_url=portrait_url)
         self.session.add(new_hero)
         self.session.commit()
@@ -63,9 +65,10 @@ class DataAccess:
     """
     Item
     """
+
     def add_item(self, item_id, item_name, image_url):
         new_item = Item(item_id=item_id,
-                        item_name = item_name,
+                        item_name=item_name,
                         image_url=image_url)
         self.session.add(new_item)
         self.session.commit()
@@ -87,6 +90,7 @@ class DataAccess:
     """
     Player
     """
+
     def add_player(self, account_id, steam_id, profile_url, real_name=None, persona_name=None, avatar=None):
         new_player = Player(account_id=account_id,
                             steam_id=steam_id,
@@ -104,8 +108,9 @@ class DataAccess:
             return query.filter(Player.account_id == account_id).first()
         elif steam_id:
             return query.filter(Player.steam_id == steam_id).first()
-        elif real_name: # recommended to be optimized by full-text search.
-            return query.filter(or_(text('real_name like :real_name'), text('persona_name like :real_name'))).params(real_name="%" + real_name + "%").limit(LIMIT_DATA).all()
+        elif real_name:  # recommended to be optimized by full-text search.
+            return query.filter(or_(text('real_name like :real_name'), text('persona_name like :real_name'))).params(
+                real_name="%" + real_name + "%").limit(LIMIT_DATA).all()
         else:
             raise ValueError('Account id or Steam id or real name must be specified!')
 
@@ -119,19 +124,20 @@ class DataAccess:
     """
     Match
     """
+
     def get_match_summary_aggregate(self, match_id):
         return self.session.query(MatchHero.account_id,
                                   func.sum(text('match_heroes.player_win')).label('player_win'),
-                                  func.count(MatchHero.player_win).label('matches')).\
-                            filter(MatchHero.match_id >= match_id).\
-                            group_by(MatchHero.account_id).\
-                            all()
+                                  func.count(MatchHero.player_win).label('matches')). \
+            filter(MatchHero.match_id >= match_id). \
+            group_by(MatchHero.account_id). \
+            all()
 
     def add_match_hero(self, match_id, account_id, player_win, hero_id):
         new_match_hero = MatchHero(match_id=match_id,
-                          account_id=account_id,
-                          player_win=player_win,
-                          hero_id=hero_id)
+                                   account_id=account_id,
+                                   player_win=player_win,
+                                   hero_id=hero_id)
         self.session.add(new_match_hero)
         self.session.commit()
         return new_match_hero
@@ -140,11 +146,11 @@ class DataAccess:
         return self.session.query(MatchHero.account_id,
                                   MatchHero.hero_id,
                                   func.sum(text('match_heroes.player_win')).label('player_win'),
-                                  func.count(MatchHero.player_win).label('matches')).\
-                            filter(MatchHero.match_id >= match_id).\
-                            group_by(MatchHero.account_id).\
-                            group_by(MatchHero.hero_id).\
-                            all()
+                                  func.count(MatchHero.player_win).label('matches')). \
+            filter(MatchHero.match_id >= match_id). \
+            group_by(MatchHero.account_id). \
+            group_by(MatchHero.hero_id). \
+            all()
 
     def add_match_item(self, match_id, account_id, player_win, item_id):
         new_match_item = MatchItem(match_id=match_id,
@@ -159,20 +165,21 @@ class DataAccess:
         return self.session.query(MatchItem.account_id,
                                   MatchItem.item_id,
                                   func.sum(text('match_items.player_win')).label('player_win'),
-                                  func.count(MatchItem.player_win).label('matches')).\
-                            filter(MatchItem.match_id >= match_id).\
-                            group_by(MatchItem.account_id).\
-                            group_by(MatchItem.item_id).\
-                            all()
+                                  func.count(MatchItem.player_win).label('matches')). \
+            filter(MatchItem.match_id >= match_id). \
+            group_by(MatchItem.account_id). \
+            group_by(MatchItem.item_id). \
+            all()
 
     """
     Match Summary
     """
+
     def get_top_player(self):
-        return self.session.query(MatchSummary).join(MatchSummary.player).\
-                            order_by(desc(MatchSummary.matches)).\
-                            order_by(desc(MatchSummary.player_win)).\
-                            limit(LIMIT_DATA).all()
+        return self.session.query(MatchSummary).join(MatchSummary.player). \
+            order_by(desc(MatchSummary.matches)). \
+            order_by(desc(MatchSummary.player_win)). \
+            limit(LIMIT_DATA).all()
 
     def save_match_summary(self, account_id, player_win, matches):
         match_summary = self.get_match_summary(account_id=account_id)
@@ -192,10 +199,10 @@ class DataAccess:
         return self.session.query(MatchSummary).filter(MatchSummary.account_id == account_id).first()
 
     def save_match_hero_summary(self, account_id, hero_id, player_win, matches):
-        match_hero_summary = self.session.query(MatchHeroSummary).\
-                                          filter(MatchHeroSummary.account_id == account_id,
-                                                 MatchHeroSummary.hero_id == hero_id).\
-                                          first()
+        match_hero_summary = self.session.query(MatchHeroSummary). \
+            filter(MatchHeroSummary.account_id == account_id,
+                   MatchHeroSummary.hero_id == hero_id). \
+            first()
         if match_hero_summary:
             match_hero_summary.player_win += player_win
             match_hero_summary.matches += matches
@@ -210,17 +217,17 @@ class DataAccess:
         self.session.commit()
 
     def get_match_hero_summary(self, account_id):
-        return self.session.query(MatchHeroSummary).join(MatchHeroSummary.hero).\
-                            filter(MatchHeroSummary.account_id == account_id).\
-                            order_by(desc(MatchHeroSummary.matches)).\
-                            order_by(desc(MatchHeroSummary.player_win)).\
-                            limit(LIMIT_DATA).all()
+        return self.session.query(MatchHeroSummary).join(MatchHeroSummary.hero). \
+            filter(MatchHeroSummary.account_id == account_id). \
+            order_by(desc(MatchHeroSummary.matches)). \
+            order_by(desc(MatchHeroSummary.player_win)). \
+            limit(LIMIT_DATA).all()
 
     def save_match_item_summary(self, account_id, item_id, player_win, matches):
-        match_item_summary = self.session.query(MatchItemSummary).\
-                                          filter(MatchItemSummary.account_id == account_id,
-                                                 MatchItemSummary.item_id == item_id).\
-                                          first()
+        match_item_summary = self.session.query(MatchItemSummary). \
+            filter(MatchItemSummary.account_id == account_id,
+                   MatchItemSummary.item_id == item_id). \
+            first()
         if match_item_summary:
             match_item_summary.player_win += player_win
             match_item_summary.matches += matches
@@ -235,15 +242,16 @@ class DataAccess:
         self.session.commit()
 
     def get_match_item_summary(self, account_id):
-        return self.session.query(MatchItemSummary).join(MatchItemSummary.item).\
-                            filter(MatchItemSummary.account_id == account_id).\
-                            order_by(desc(MatchItemSummary.matches)).\
-                            order_by(desc(MatchItemSummary.player_win)).\
-                            limit(LIMIT_DATA).all()
+        return self.session.query(MatchItemSummary).join(MatchItemSummary.item). \
+            filter(MatchItemSummary.account_id == account_id). \
+            order_by(desc(MatchItemSummary.matches)). \
+            order_by(desc(MatchItemSummary.player_win)). \
+            limit(LIMIT_DATA).all()
 
     """
     History
     """
+
     def add_history(self, last_match_id):
         new_history = History(last_match_id=last_match_id)
         self.session.add(new_history)
