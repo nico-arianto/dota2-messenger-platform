@@ -16,7 +16,7 @@ Dota 2 Facebook Webhooks - Simple query for players information via Facebook mes
 - [ ] pages_messaging_phone_number
 - [ ] pages_messaging_subscriptions
 
-### Refereneces
+### References
 
 - [Message Platform](https://developers.facebook.com/docs/messenger-platform)
 
@@ -38,6 +38,7 @@ Dota 2 Facebook Webhooks - Simple query for players information via Facebook mes
 * virtualenv 15.1.0
 * pip 9.0.1
 * gunicorn 19.6.0 (Required and recommended for nginx web server)
+* supervisor 3.3.1
 
 
 ## Database
