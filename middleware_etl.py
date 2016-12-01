@@ -1,3 +1,5 @@
+from dota2api.src.exceptions import APIError
+from dota2api.src.exceptions import APITimeoutError
 from sqlalchemy.exc import DatabaseError
 
 import logger
@@ -67,7 +69,18 @@ def fill_database_detail(data, api):
 def __fill_player(data, api, account_id):
     LOGGER.info('Find account id: %d', account_id)
     # Important: Cannot utilize steamids with account_ids, because the orders of returned players was not in the same sequence and no account id in the response.
-    players = api.get_player_summaries(steamids=account_id)
+    try:
+        players = api.get_player_summaries(steamids=account_id)
+    except (APIError, APITimeoutError):
+        # Temporary creates a blank account with consideration that this account will be synch up again in the next fill_database_detail() invocation.
+        players = {
+            'players': [
+                {
+                    'steamid': account_id,
+                    'profileurl': 'N/A'
+                }
+            ]
+        }
     if players is None:
         LOGGER.info('Not found account id: %d', account_id)
         return False
