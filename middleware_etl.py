@@ -71,7 +71,8 @@ def __fill_player(data, api, account_id):
     # Important: Cannot utilize steamids with account_ids, because the orders of returned players was not in the same sequence and no account id in the response.
     try:
         players = api.get_player_summaries(steamids=account_id)
-    except (APIError, APITimeoutError):
+    except (APIError, APITimeoutError) as error:
+        LOGGER.error('Failed to retrieved account id: %d and for now it will be recorded with minimum info, error: %s', account_id, str(error))
         # Temporary creates a blank account with consideration that this account will be synch up again in the next fill_database_detail() invocation.
         players = {
             'players': [
