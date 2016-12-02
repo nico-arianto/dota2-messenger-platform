@@ -29,7 +29,7 @@ class DataAccess:
     def __init__(self, connection):
         if not connection:
             raise ValueError('Connection string is required!')
-        db_engine = create_engine(connection)
+        db_engine = create_engine(connection, pool_recycle=3600)
         db_session = sessionmaker(bind=db_engine)
         self.connection = connection
         self.session = db_session()
