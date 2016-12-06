@@ -3,6 +3,7 @@ from dota2api.src.exceptions import APITimeoutError
 from sqlalchemy.exc import DatabaseError
 
 import logger
+from Models import Database
 
 LOGGER = logger.getLogger(__name__)
 
@@ -72,7 +73,8 @@ def __fill_player(data, api, account_id):
     try:
         players = api.get_player_summaries(steamids=account_id)
     except (APIError, APITimeoutError) as error:
-        LOGGER.error('Failed to retrieved account id: %d and for now it will be recorded with minimum info, error: %s', account_id, str(error))
+        LOGGER.error('Failed to retrieved account id: %d and for now it will be recorded with minimum info, error: %s',
+                     account_id, str(error))
         # Temporary creates a blank account with consideration that this account will be synch up again in the next fill_database_detail() invocation.
         players = {
             'players': [
@@ -112,7 +114,7 @@ def __fill_player(data, api, account_id):
             return True
         except DatabaseError as error:  # Temporary ignore the unsupported data, especially the unicode issue.
             LOGGER.error('Failed to process account id: %d, error: %s', account_id, str(error))
-            data.session.rollback()
+            Database.session.rollback()
     return False
 
 

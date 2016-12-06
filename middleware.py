@@ -9,7 +9,13 @@ from middleware_postback import received_postback as received_postback_internal
 
 LOGGER = logger.getLogger(__name__)
 API = dota2api.Initialise(api_key=config.dota2api['D2_API_KEY'])
-DATA = DataAccess(connection=config.mysql['CONNECT_STRING'])
+DATA = None
+
+
+def initialize_data_access(app):
+    global DATA
+    DATA = DataAccess(app)
+
 
 """
 Metadata
@@ -104,7 +110,16 @@ def received_postback(event):
     received_postback_internal(data=DATA, event=event)
 
 
+"""
+Main for scheduled job recommendation
+"""
+
+from flask import Flask
+
 if __name__ == '__main__':
-    initialise_database()
-    fill_database_master()
-    fill_database_detail()
+    app = Flask(__name__)
+    initialize_data_access(app=app)
+    with app.app_context():
+        initialise_database()
+        fill_database_master()
+        fill_database_detail()

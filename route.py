@@ -16,7 +16,7 @@ APP_SECRET = bytes(config.facebook['APP_SECRET'], 'utf-8')
 
 def initalize_routes(app):
     if app is None:
-        return
+        raise ValueError('Application is required!')
     context_root = '/v1.0/'
     app.add_url_rule(context_root + 'webhook', 'webhook_validation', webhook_validation, methods=['GET'])
     app.add_url_rule(context_root + 'webhook', 'webhook_callback', webhook_callback, methods=['POST'])

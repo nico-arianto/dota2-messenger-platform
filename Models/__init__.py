@@ -10,5 +10,6 @@ from Models.MatchHeroSummary import MatchHeroSummary
 from Models.MatchItem import MatchItem
 from Models.MatchItemSummary import MatchItemSummary
 from Models.MatchSummary import MatchSummary
+from Models.Model import Database
 from Models.Model import Model
 from Models.Player import Player

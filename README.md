@@ -30,6 +30,7 @@ Dota 2 Facebook Webhooks - Simple query for players information via Facebook mes
 * Eve 0.6.4 (include Flask 0.10.1)
 * dota2api 1.3.2
 * SQLAlchemy 1.1.4
+* Flask-SQLAlchemy 2.1
 * mysql-connector 2.1.4 (Required for mysqld server, but for other database adapters please read more in this [document](http://docs.sqlalchemy.org/en/latest/dialects/))
 * requests 2.12.1
 
