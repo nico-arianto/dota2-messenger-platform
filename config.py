@@ -1,6 +1,6 @@
 dota2api = dict(
     # Get one from Valve (reference: http://dota2api.readthedocs.io/en/latest/tutorial.html)
-    D2_API_KEY=''
+    D2_API_KEY='Dota2'
 )
 
 mysql = dict(
